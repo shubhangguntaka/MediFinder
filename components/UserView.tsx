@@ -108,7 +108,7 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
   
   const [manualLocation, setManualLocation] = useState<{ lat: number; lng: number; name: string } | null>(() => {
     try {
-        const saved = sessionStorage.getItem('medifind_manual_location');
+        const saved = localStorage.getItem('medifind_manual_location');
         return saved ? JSON.parse(saved) : null;
     } catch {
         return null;
@@ -145,7 +145,7 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
 
   const handleSetManualLocation = (location: { lat: number; lng: number; name: string }) => {
     setManualLocation(location);
-    sessionStorage.setItem('medifind_manual_location', JSON.stringify(location));
+    localStorage.setItem('medifind_manual_location', JSON.stringify(location));
     setIsLocationSelectorOpen(false);
     // When manual location is set, also reset search state to show new default list
     setHasSearched(false);
@@ -154,7 +154,7 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
 
   const handleUseCurrentLocation = () => {
     setManualLocation(null);
-    sessionStorage.removeItem('medifind_manual_location');
+    localStorage.removeItem('medifind_manual_location');
     setIsLocationSelectorOpen(false);
     // Reset search state to show list based on auto-detected location
     setHasSearched(false);

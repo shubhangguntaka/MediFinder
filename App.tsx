@@ -15,12 +15,12 @@ const App: React.FC = () => {
   const [view, setView] = useState<'main' | 'profile'>('main');
   
   const [hasStarted, setHasStarted] = useState(() => {
-    // Check session storage on initial render
-    return !!sessionStorage.getItem('medifind_has_started');
+    // Check local storage on initial render
+    return !!localStorage.getItem('medifind_has_started');
   });
 
   const handleGetStarted = () => {
-    sessionStorage.setItem('medifind_has_started', 'true');
+    localStorage.setItem('medifind_has_started', 'true');
     setHasStarted(true);
   };
   
