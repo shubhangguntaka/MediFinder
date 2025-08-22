@@ -1,4 +1,5 @@
 
+
 import Fuse from 'fuse.js';
 import type { Pharmacy, StoredUser, AuthorUser, SearchResult, BasicStoreInfo } from '../types';
 import { getMedicineInfo } from './geminiService';
@@ -6,7 +7,7 @@ import { getMedicineInfo } from './geminiService';
 // Helper to get users from localStorage
 const getUsersFromStorage = (): StoredUser[] => {
     try {
-        const users = localStorage.getItem('medifinder_users');
+        const users = localStorage.getItem('medifind_users');
         return users ? JSON.parse(users) : [];
     } catch (e) {
         return [];

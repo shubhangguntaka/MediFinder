@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
@@ -15,11 +16,11 @@ const App: React.FC = () => {
   
   const [hasStarted, setHasStarted] = useState(() => {
     // Check session storage on initial render
-    return !!sessionStorage.getItem('medifinder_has_started');
+    return !!sessionStorage.getItem('medifind_has_started');
   });
 
   const handleGetStarted = () => {
-    sessionStorage.setItem('medifinder_has_started', 'true');
+    sessionStorage.setItem('medifind_has_started', 'true');
     setHasStarted(true);
   };
   

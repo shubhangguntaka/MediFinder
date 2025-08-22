@@ -15,7 +15,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
       <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12 text-center">
         <header className="flex items-center justify-center gap-3 mb-8">
           <PillIcon className="w-12 h-12 text-primary-600" />
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">MediFinder</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">MediFind</h1>
         </header>
 
         <div className="max-w-3xl mx-auto">
@@ -23,7 +23,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ onGetStarted }) => {
             Find Your Medicine, <span className="text-primary-600">Instantly.</span>
           </h2>
           <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 sm:text-xl">
-            MediFinder helps you locate nearby pharmacies with the medicines you need in stock. Search by medicine or store name and get real-time availability and directions.
+            MediFind helps you locate nearby pharmacies with the medicines you need in stock. Search by medicine or store name and get real-time availability and directions.
           </p>
         </div>
 

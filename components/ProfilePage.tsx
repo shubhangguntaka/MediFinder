@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, THEMES, ColorTheme } from '../contexts/ThemeContext';
@@ -159,7 +160,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       </main>
       
       <footer className="text-center py-4 mt-8">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Created by the MediFinder Team</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Created by the MediFind Team</p>
       </footer>
 
       {isEditModalOpen && (

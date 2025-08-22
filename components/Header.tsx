@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { PillIcon, UserIcon, SunIcon, MoonIcon, ChevronDownIcon } from './icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onProfileClick, onLogout 
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center justify-center gap-3">
           <PillIcon className="w-8 h-8 text-primary-600" />
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">MediFinder</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">MediFind</h1>
         </div>
 
         <div className="flex items-center gap-4">

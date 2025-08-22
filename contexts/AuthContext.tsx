@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import type { User, StoredUser, AuthorUser, Medicine, CustomerUser } from '../types';
 import { geocodeAddress } from '../services/geminiService';
@@ -45,7 +46,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Helper functions to interact with localStorage
 const getUsersFromStorage = (): StoredUser[] => {
     try {
-        const users = localStorage.getItem('medifinder_users');
+        const users = localStorage.getItem('medifind_users');
         return users ? JSON.parse(users) : [];
     } catch (e) {
         return [];
@@ -53,12 +54,12 @@ const getUsersFromStorage = (): StoredUser[] => {
 };
 
 const saveUsersToStorage = (users: StoredUser[]) => {
-    localStorage.setItem('medifinder_users', JSON.stringify(users));
+    localStorage.setItem('medifind_users', JSON.stringify(users));
 };
 
 const getSessionFromStorage = (): User | null => {
     try {
-        const session = localStorage.getItem('medifinder_session');
+        const session = localStorage.getItem('medifind_session');
         if (!session) return null;
         const parsed = JSON.parse(session);
         // Ensure users with scheduled deletion can't log in
@@ -72,11 +73,11 @@ const getSessionFromStorage = (): User | null => {
 };
 
 const saveSessionToStorage = (user: User) => {
-    localStorage.setItem('medifinder_session', JSON.stringify(user));
+    localStorage.setItem('medifind_session', JSON.stringify(user));
 };
 
 const clearSessionFromStorage = () => {
-    localStorage.removeItem('medifinder_session');
+    localStorage.removeItem('medifind_session');
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

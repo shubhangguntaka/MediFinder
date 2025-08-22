@@ -1,4 +1,5 @@
 
+
 import type { StoredUser } from '../types';
 
 const seedUsers: StoredUser[] = [
@@ -393,9 +394,9 @@ const seedUsers: StoredUser[] = [
 
 export const seedInitialData = () => {
     try {
-        const users = localStorage.getItem('medifinder_users');
+        const users = localStorage.getItem('medifind_users');
         if (!users || JSON.parse(users).length === 0) {
-            localStorage.setItem('medifinder_users', JSON.stringify(seedUsers));
+            localStorage.setItem('medifind_users', JSON.stringify(seedUsers));
             console.log('Successfully seeded initial user data for Hyderabad.');
         }
     } catch (e) {
