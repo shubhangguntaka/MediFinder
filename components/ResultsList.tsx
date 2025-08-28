@@ -1,6 +1,7 @@
 import React from 'react';
-import type { SearchResult, Medicine } from '../types';
+import type { SearchResult, Medicine, MedicineInfo } from '../types';
 import ResultCard from './ResultCard';
+// FIX: Removed unused FilterIcon and SortIcon imports which were causing errors as they are not exported from icons.tsx.
 import { SearchIcon, StoreIcon, PillIcon } from './icons';
 
 const SkeletonCard: React.FC = () => (
@@ -43,9 +44,13 @@ interface ResultsListProps {
   searched: boolean;
   isGuest: boolean;
   onLoginClick: () => void;
+  sortOption: 'distance' | 'stock';
+  onSortChange: (option: 'distance' | 'stock') => void;
+  showInStockOnly: boolean;
+  onFilterChange: (show: boolean) => void;
 }
 
-const ResultsList: React.FC<ResultsListProps> = ({ results, isLoading, error, searched, isGuest, onLoginClick }) => {
+const ResultsList: React.FC<ResultsListProps> = ({ results, isLoading, error, searched, isGuest, onLoginClick, sortOption, onSortChange, showInStockOnly, onFilterChange }) => {
   if (isLoading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -77,11 +82,26 @@ const ResultsList: React.FC<ResultsListProps> = ({ results, isLoading, error, se
 
   if (results?.type === 'medicines') {
     const { data, medicineInfo, medicineName } = results;
+
+    // Apply filtering and sorting only for logged-in users.
+    // Guests see the default list (already sorted by distance from service).
+    const displayData = !isGuest
+      ? (() => {
+          const filtered = showInStockOnly ? data.filter(p => p.medicine.stock > 0) : data;
+          return [...filtered].sort((a, b) => {
+            if (sortOption === 'stock') {
+              return b.medicine.stock - a.medicine.stock;
+            }
+            return a.distance - b.distance;
+          });
+        })()
+      : data;
+
     return (
       <div>
-        {medicineInfo && (
+        {!isGuest && medicineInfo && (
           <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-6 rounded-xl shadow-lg mb-8 text-white">
-            <div className="flex items-start gap-4 mb-3">
+            <div className="flex items-start gap-4 mb-4">
                 <div className="flex-shrink-0 bg-white/20 p-2 rounded-full">
                     <PillIcon className="w-7 h-7" />
                 </div>
@@ -90,13 +110,55 @@ const ResultsList: React.FC<ResultsListProps> = ({ results, isLoading, error, se
                 <h3 className="font-bold text-2xl capitalize">{medicineName}</h3>
               </div>
             </div>
-            <p className="text-primary-50 leading-relaxed text-md">{medicineInfo}</p>
+            <p className="text-primary-50 leading-relaxed text-md mb-4">{medicineInfo.description}</p>
+             <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4 text-sm border-t border-white/20 pt-4">
+                <div>
+                    <p className="font-semibold text-primary-100">Primary Use</p>
+                    <p className="text-primary-50 mt-1">{medicineInfo.primaryUse}</p>
+                </div>
+                <div>
+                    <p className="font-semibold text-primary-100">Common Forms</p>
+                    <p className="text-primary-50 mt-1">{medicineInfo.commonForms}</p>
+                </div>
+            </div>
           </div>
         )}
+        {!isGuest && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                    <label htmlFor="sort-by" className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
+                    <select id="sort-by" value={sortOption} onChange={(e) => onSortChange(e.target.value as 'distance' | 'stock')} className="bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 rounded-md text-sm focus:ring-primary-500 focus:border-primary-500">
+                        <option value="distance">Distance (nearest)</option>
+                        <option value="stock">Stock (highest)</option>
+                    </select>
+                </div>
+                <div className="relative flex items-start">
+                    <div className="flex h-5 items-center">
+                        <input id="in-stock-only" type="checkbox" checked={showInStockOnly} onChange={(e) => onFilterChange(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:bg-slate-600 dark:border-slate-500" />
+                    </div>
+                    <div className="ml-3 text-sm">
+                        <label htmlFor="in-stock-only" className="font-medium text-gray-700 dark:text-gray-300">Show in-stock only</label>
+                    </div>
+                </div>
+            </div>
+        )}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {data.map((pharmacy, index) => (
+          {displayData.length > 0 ? displayData.map((pharmacy, index) => (
             <ResultCard key={`${pharmacy.name}-${index}`} pharmacy={pharmacy} isGuest={isGuest} onLoginClick={onLoginClick} />
-          ))}
+          )) : (
+             <div className="md:col-span-2 lg:col-span-3 text-center py-10 px-4">
+                <SearchIcon className="w-16 h-16 mx-auto text-gray-400 dark:text-slate-600 opacity-75" />
+                <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">
+                    {data.length > 0 ? "No Results Match Your Filters" : "No Results Found"}
+                </h3>
+                <p className="mt-1 text-gray-500 dark:text-gray-400">
+                    {data.length > 0 
+                        ? 'Try clearing the "Show in-stock only" filter or searching for something else.'
+                        : "We couldn't find any pharmacies with this medicine."
+                    }
+                </p>
+            </div>
+          )}
         </div>
       </div>
     );

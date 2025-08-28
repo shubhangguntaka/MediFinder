@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import SearchBar from './SearchBar';
 import ResultsList from './ResultsList';
@@ -122,6 +123,10 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
   const [hasSearched, setHasSearched] = useState(false);
   const [initialStores, setInitialStores] = useState<BasicStoreInfo[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  
+  const [sortOption, setSortOption] = useState<'distance' | 'stock'>('distance');
+  const [showInStockOnly, setShowInStockOnly] = useState(false);
+
 
   const currentLocation = manualLocation ?? autoDetectedLocation;
 
@@ -240,6 +245,10 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
                   searched={hasSearched}
                   isGuest={!user}
                   onLoginClick={onLoginClick}
+                  sortOption={sortOption}
+                  onSortChange={setSortOption}
+                  showInStockOnly={showInStockOnly}
+                  onFilterChange={setShowInStockOnly}
               />
             </div>
         ) : (

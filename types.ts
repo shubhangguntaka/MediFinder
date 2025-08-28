@@ -59,10 +59,16 @@ export interface StoreSearchResult {
     distance: number;
 }
 
+export interface MedicineInfo {
+    description: string;
+    primaryUse: string;
+    commonForms: string;
+}
+
 export interface MedicineSearchResult {
     type: 'medicines';
     data: Pharmacy[];
-    medicineInfo: string | null;
+    medicineInfo: MedicineInfo | null;
     medicineName: string;
 }
 

@@ -1,7 +1,6 @@
 
-
 import Fuse from 'fuse.js';
-import type { Pharmacy, StoredUser, AuthorUser, SearchResult, BasicStoreInfo } from '../types';
+import type { Pharmacy, StoredUser, AuthorUser, SearchResult, BasicStoreInfo, MedicineInfo } from '../types';
 import { getMedicineInfo } from './geminiService';
 
 // Helper to get users from localStorage
@@ -79,11 +78,12 @@ export const searchPharmacies = async (
     const storeFuse = new Fuse(authors, {
         keys: ['storeName'],
         includeScore: true,
-        threshold: 0.3, // Stricter threshold for store names
+        threshold: 0.2, // Stricter threshold for store names
+        minMatchCharLength: 3,
     });
     const storeResults = storeFuse.search(searchTerm);
 
-    if (storeResults.length > 0 && (storeResults[0].score ?? 1) < 0.3) {
+    if (storeResults.length > 0 && (storeResults[0].score ?? 1) < 0.2) {
         const matchingStore = storeResults[0].item;
         const distance = userLocation 
             ? calculateDistance(userLocation.lat, userLocation.lng, matchingStore.location.lat, matchingStore.location.lng) 
@@ -112,9 +112,13 @@ export const searchPharmacies = async (
         if (!author.inventory || author.inventory.length === 0) return;
 
         const medicineFuse = new Fuse(author.inventory, {
-            keys: ['name', 'brands'], // Search in both generic name and brands
+            keys: [
+                { name: 'name', weight: 0.7 },
+                { name: 'brands', weight: 0.3 }
+            ],
             includeScore: true,
-            threshold: 0.4, // More lenient threshold for medicine names
+            threshold: 0.3,
+            minMatchCharLength: 3,
         });
         const medicineResults = medicineFuse.search(searchTerm);
 
@@ -141,7 +145,7 @@ export const searchPharmacies = async (
     }
 
     // Fetch medicine info from Gemini
-    const medicineInfo = await getMedicineInfo(searchTerm);
+    const medicineInfo: MedicineInfo | null = await getMedicineInfo(searchTerm);
     
     // Sort by distance if location is available
     if (userLocation) {

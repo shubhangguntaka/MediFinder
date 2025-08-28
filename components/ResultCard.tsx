@@ -11,6 +11,7 @@ interface ResultCardProps {
 
 const ResultCard: React.FC<ResultCardProps> = ({ pharmacy, isGuest, onLoginClick }) => {
   const isInStock = pharmacy.medicine.stock > 0;
+  const isOutOfStock = !isInStock;
 
   const handleGetDirections = () => {
     const { lat, lng } = pharmacy.location;
@@ -24,7 +25,8 @@ const ResultCard: React.FC<ResultCardProps> = ({ pharmacy, isGuest, onLoginClick
 
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200/80 flex flex-col justify-between group hover:shadow-lg hover:-translate-y-1 dark:bg-slate-800 dark:border-slate-700">
+    <div className={`bg-white p-5 rounded-xl shadow-sm border border-gray-200/80 flex flex-col justify-between group hover:shadow-lg hover:-translate-y-1 dark:bg-slate-800 dark:border-slate-700 relative transition-opacity ${isOutOfStock ? 'opacity-70' : ''}`}>
+      {isOutOfStock && <div className="absolute inset-0 bg-slate-50/40 dark:bg-slate-900/60 rounded-xl pointer-events-none"></div>}
       <div className="flex-grow">
         {/* Store Info */}
         <div className="flex items-start gap-3 mb-3">
@@ -76,7 +78,9 @@ const ResultCard: React.FC<ResultCardProps> = ({ pharmacy, isGuest, onLoginClick
         ) : (
             <button
               onClick={handleGetDirections}
-              className="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-opacity-50 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+              disabled={isOutOfStock}
+              className="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-opacity-50 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300 disabled:bg-slate-300 disabled:cursor-not-allowed dark:disabled:bg-slate-600 dark:disabled:text-slate-400"
+              title={isOutOfStock ? "Out of stock" : "Get Directions"}
             >
               Get Directions
             </button>

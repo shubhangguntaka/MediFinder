@@ -1,5 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
+import type { MedicineInfo } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -16,27 +17,39 @@ const geocodeSchema = {
     required: ["lat", "lng"],
 };
 
-export const getMedicineInfo = async (medicineName: string): Promise<string | null> => {
+const medicineInfoSchema = {
+    type: Type.OBJECT,
+    properties: {
+        description: { type: Type.STRING, description: 'A brief, one-paragraph description of the medicine for a layperson. If you cannot find information, this field should state that clearly.' },
+        primaryUse: { type: Type.STRING, description: 'The primary medical condition this medicine is used to treat. Should be "N/A" if not found.' },
+        commonForms: { type: Type.STRING, description: 'Common forms the medicine comes in (e.g., tablets, syrup, injection). Should be "N/A" if not found.' },
+    },
+    required: ["description", "primaryUse", "commonForms"],
+};
+
+export const getMedicineInfo = async (medicineName: string): Promise<MedicineInfo | null> => {
     try {
-        const prompt = `Provide a brief, one-paragraph description for the medicine "${medicineName}". Focus on its primary use, what it treats, and common forms. Keep it simple and easy for a layperson to understand. If you cannot find information, state that clearly.`;
+        const prompt = `Provide details for the medicine "${medicineName}". Focus on its primary use, what it treats, and common forms. Keep the description simple and easy for a layperson to understand. If you cannot find information, state that clearly in the description and use "N/A" for other fields.`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
-                temperature: 0.4,
-                topP: 0.9,
-                topK: 30,
+                temperature: 0.2,
+                responseMimeType: "application/json",
+                responseSchema: medicineInfoSchema,
             },
         });
 
-        const text = response.text.trim();
+        const jsonText = response.text.trim();
+        const info = JSON.parse(jsonText);
+        
         // Avoid returning generic failure messages from the model as valid info
-        if (text.toLowerCase().includes("cannot find information") || text.toLowerCase().includes("i do not have information")) {
+        if (info.description.toLowerCase().includes("cannot find information") || info.description.toLowerCase().includes("i do not have information")) {
             return null;
         }
 
-        return text;
+        return info as MedicineInfo;
     } catch (error) {
         console.error(`Error fetching info for ${medicineName}:`, error);
         return null; // Return null on error so the app doesn't break
