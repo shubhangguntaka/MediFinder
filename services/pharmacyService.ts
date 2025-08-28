@@ -1,4 +1,3 @@
-
 import Fuse from 'fuse.js';
 import type { Pharmacy, StoredUser, AuthorUser, SearchResult, BasicStoreInfo, MedicineInfo } from '../types';
 import { getMedicineInfo } from './geminiService';
@@ -11,6 +10,22 @@ const getUsersFromStorage = (): StoredUser[] => {
     } catch (e) {
         return [];
     }
+};
+
+// Helper to get only valid author users with location data
+const getValidAuthors = (): AuthorUser[] => {
+    const allUsers = getUsersFromStorage();
+    // Filter for authors and ensure they have a valid location property
+    // FIX: The type predicate `user is AuthorUser` was invalid because `AuthorUser` is not a subtype of `StoredUser`.
+    // The correct predicate narrows `StoredUser` to `AuthorUser & StoredUser`, which correctly resolves to an `AuthorUser` with storage properties.
+    // This makes the filtered array type-compatible with `AuthorUser[]`.
+    return allUsers.filter(
+        (user): user is AuthorUser & StoredUser =>
+            user.role === 'author' &&
+            !!user.location &&
+            typeof user.location.lat === 'number' &&
+            typeof user.location.lng === 'number'
+    );
 };
 
 /**
@@ -32,8 +47,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 export const getAllPharmacies = (
     userLocation: { lat: number, lng: number } | null
 ): Promise<BasicStoreInfo[]> => {
-    const allUsers = getUsersFromStorage();
-    const authors = allUsers.filter(user => user.role === 'author') as AuthorUser[];
+    const authors = getValidAuthors();
 
     const stores: BasicStoreInfo[] = authors.map(author => {
         const distance = userLocation
@@ -66,8 +80,7 @@ export const searchPharmacies = async (
     userLocation: { lat: number, lng: number } | null
 ): Promise<SearchResult | null> => {
     
-    const allUsers = getUsersFromStorage();
-    const authors = allUsers.filter(user => user.role === 'author') as AuthorUser[];
+    const authors = getValidAuthors();
     const searchTerm = query.trim();
 
     if (!searchTerm) {

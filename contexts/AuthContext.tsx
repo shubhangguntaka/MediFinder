@@ -1,9 +1,9 @@
 
-
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import type { User, StoredUser, AuthorUser, Medicine, CustomerUser } from '../types';
 import { geocodeAddress } from '../services/geminiService';
 import { seedInitialData } from '../services/seedData';
+import { useToast } from './ToastContext';
 
 interface RegisterData {
     email: string;
@@ -11,6 +11,7 @@ interface RegisterData {
     role: 'user' | 'author';
     storeName?: string;
     address?: string;
+    location?: { lat: number; lng: number };
 }
 
 interface ProfileUpdateData {
@@ -19,6 +20,7 @@ interface ProfileUpdateData {
     email?: string;
     storeName?: string;
     address?: string;
+    location?: { lat: number; lng: number };
 }
 
 interface PasswordChangeData {
@@ -36,9 +38,10 @@ interface AuthContextType {
   changePassword: (data: PasswordChangeData) => Promise<{ success: boolean; error?: string }>;
   deleteAccount: (password: string) => Promise<{ success: boolean; error?: string }>;
   addSearchTerm: (term: string) => void;
-  error: string | null;
-  clearError: () => void;
   isProcessing: boolean;
+  requestPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
+  verifyPasswordResetOTP: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (email: string, newPassword_plaintext: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -82,9 +85,9 @@ const clearSessionFromStorage = () => {
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // Seed data on initial load if no users exist
@@ -97,15 +100,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsInitialized(true);
   }, []);
 
-  const clearError = () => setError(null);
-
   const register = async (data: RegisterData) => {
-    setError(null);
     setIsProcessing(true);
 
     const users = getUsersFromStorage();
     if (users.find(u => u.email.toLowerCase() === data.email.toLowerCase())) {
-        setError('An account with this email already exists.');
+        showToast('An account with this email already exists.', 'error');
         setIsProcessing(false);
         return;
     }
@@ -113,11 +113,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let newUser: StoredUser;
     if (data.role === 'author') {
         if (!data.storeName || !data.address) {
-            setError('Store Name and Address are required for owners.');
+            showToast('Store Name and Address are required for owners.', 'error');
             setIsProcessing(false);
             return;
         }
-        const location = await geocodeAddress(data.address);
+        // Use provided location from map if available, otherwise geocode the address
+        const location = data.location ?? await geocodeAddress(data.address);
         newUser = {
             email: data.email,
             password_plaintext: data.password_plaintext,
@@ -146,17 +147,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const sessionUser: User = newUser;
     saveSessionToStorage(sessionUser);
     setUser(sessionUser);
+    showToast('Registration successful!', 'success');
     setIsProcessing(false);
   };
 
   const login = async (email: string, password_plaintext: string) => {
-    setError(null);
     setIsProcessing(true);
     const users = getUsersFromStorage();
     const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (foundUser?.deletionScheduledOn) {
-        setError('This account is scheduled for deletion.');
+        showToast('This account is scheduled for deletion.', 'error');
         setIsProcessing(false);
         return;
     }
@@ -165,8 +166,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const sessionUser: User = { ...foundUser };
         saveSessionToStorage(sessionUser);
         setUser(sessionUser);
+        showToast('Login successful!', 'success');
     } else {
-        setError('Invalid email or password.');
+        showToast('Invalid email or password.', 'error');
     }
     setIsProcessing(false);
   };
@@ -190,6 +192,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         saveSessionToStorage(updatedAuthor);
         setUser(updatedAuthor);
+        showToast('Inventory updated successfully!', 'success');
     }
   };
 
@@ -200,12 +203,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const userIndex = allUsers.findIndex(u => u.email === user.email);
 
     if (userIndex === -1) {
+      showToast('User not found.', 'error');
       return { success: false, error: 'User not found.' };
     }
 
     if (data.email && data.email.toLowerCase() !== user.email.toLowerCase()) {
       const emailExists = allUsers.some(u => u.email.toLowerCase() === data.email!.toLowerCase());
       if (emailExists) {
+        showToast('This email is already taken.', 'error');
         return { success: false, error: 'This email is already taken.' };
       }
     }
@@ -217,10 +222,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (data.email) updatedUser.email = data.email;
 
     if (updatedUser.role === 'author') {
+      const originalAuthor = allUsers[userIndex] as AuthorUser;
       if (data.storeName) updatedUser.storeName = data.storeName;
-      if (data.address && data.address !== updatedUser.address) {
-        updatedUser.address = data.address;
-        updatedUser.location = await geocodeAddress(data.address);
+      if (data.address) updatedUser.address = data.address;
+      
+      if (data.location) {
+        // If coordinates are provided directly from the map, use them.
+        updatedUser.location = data.location;
+      } else if (data.address && data.address !== originalAuthor.address) {
+        // If only the address string was changed, geocode it.
+        try {
+          updatedUser.location = await geocodeAddress(data.address);
+        } catch (error: any) {
+          const errorMessage = error.message || "Could not validate the new address.";
+          showToast(errorMessage, 'error');
+          return { success: false, error: errorMessage };
+        }
       }
     }
     
@@ -230,7 +247,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newSessionUser: User = { ...updatedUser };
     saveSessionToStorage(newSessionUser);
     setUser(newSessionUser);
-
+    showToast('Profile updated successfully!', 'success');
     return { success: true };
   };
   
@@ -239,17 +256,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const allUsers = getUsersFromStorage();
     const userIndex = allUsers.findIndex(u => u.email === user.email);
 
-    if (userIndex === -1) return { success: false, error: 'User not found.' };
+    if (userIndex === -1) {
+        showToast('User not found.', 'error');
+        return { success: false, error: 'User not found.' };
+    }
 
     const storedUser = allUsers[userIndex];
     if (storedUser.password_plaintext !== currentPassword_plaintext) {
+      showToast('Incorrect current password.', 'error');
       return { success: false, error: 'Incorrect current password.' };
     }
     
     storedUser.password_plaintext = newPassword_plaintext;
     allUsers[userIndex] = storedUser;
     saveUsersToStorage(allUsers);
-
+    showToast('Password changed successfully!', 'success');
     return { success: true };
   };
 
@@ -260,10 +281,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const userIndex = allUsers.findIndex(u => u.email === user.email);
 
     if (userIndex === -1) {
+        showToast('User not found.', 'error');
         return { success: false, error: 'User not found.' };
     }
 
     if (allUsers[userIndex].password_plaintext !== password) {
+        showToast('Incorrect password.', 'error');
         return { success: false, error: 'Incorrect password.' };
     }
 
@@ -273,6 +296,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     saveUsersToStorage(allUsers);
     
     logout();
+    showToast('Account deletion scheduled. You have been logged out.', 'info');
     return { success: true };
   };
 
@@ -297,14 +321,90 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Update session and state
     saveSessionToStorage(updatedUser);
     setUser(updatedUser);
- };
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    setIsProcessing(true);
+    const users = getUsersFromStorage();
+    const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (userIndex === -1) {
+        showToast('No account found with that email address.', 'error');
+        setIsProcessing(false);
+        return { success: false, error: 'No account found with that email address.' };
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    users[userIndex].resetOTP = { code: otp, expires };
+    saveUsersToStorage(users);
+
+    showToast(`OTP sent to ${email}. (DEV: ${otp})`, 'info');
+    
+    setIsProcessing(false);
+    return { success: true };
+  };
+
+  const verifyPasswordResetOTP = async (email: string, otp: string) => {
+    setIsProcessing(true);
+    const users = getUsersFromStorage();
+    const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    
+    if (userIndex === -1) {
+        showToast('An unexpected error occurred.', 'error');
+        setIsProcessing(false);
+        return { success: false, error: 'An unexpected error occurred.' };
+    }
+
+    const user = users[userIndex];
+    if (!user.resetOTP || user.resetOTP.code !== otp) {
+        showToast('Invalid OTP.', 'error');
+        setIsProcessing(false);
+        return { success: false, error: 'Invalid OTP.' };
+    }
+
+    if (Date.now() > user.resetOTP.expires) {
+      delete user.resetOTP;
+      saveUsersToStorage(users);
+      showToast('OTP has expired. Please request a new one.', 'error');
+      setIsProcessing(false);
+      return { success: false, error: 'OTP has expired. Please request a new one.' };
+    }
+
+    setIsProcessing(false);
+    return { success: true };
+  };
+
+  const resetPassword = async (email: string, newPassword_plaintext: string) => {
+      setIsProcessing(true);
+      const users = getUsersFromStorage();
+      const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+
+      if (userIndex === -1) {
+          showToast('An unexpected error occurred.', 'error');
+          setIsProcessing(false);
+          return { success: false, error: 'An unexpected error occurred.' };
+      }
+      
+      const user = users[userIndex];
+      user.password_plaintext = newPassword_plaintext;
+      delete user.resetOTP;
+      
+      users[userIndex] = user;
+      saveUsersToStorage(users);
+      
+      showToast('Password has been reset successfully. Please sign in.', 'success');
+      setIsProcessing(false);
+      return { success: true };
+  };
 
   if (!isInitialized) {
       return null; // or a loading spinner
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, error, clearError, updateInventory, addSearchTerm, updateProfile, deleteAccount, changePassword, isProcessing }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateInventory, addSearchTerm, updateProfile, deleteAccount, changePassword, isProcessing, requestPasswordReset, verifyPasswordResetOTP, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

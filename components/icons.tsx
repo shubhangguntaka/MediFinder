@@ -58,6 +58,18 @@ export const CheckCircleIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const XCircleIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+export const InformationCircleIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+    </svg>
+);
+
 export const GlobeIcon: React.FC<IconProps> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
@@ -96,7 +108,7 @@ export const PencilIcon: React.FC<IconProps> = (props) => (
 
 export const Cog6ToothIcon: React.FC<IconProps> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-1.212l2.27-1.135a1.875 1.875 0 0 1 1.989 0l2.27 1.135c.55.274 1.02.67 1.11 1.212l.638 3.828c.07.42.36.784.78.96l3.363 1.682a1.875 1.875 0 0 1 0 3.364l-3.363 1.682c-.42.21-.71.54-.78.96l-.638 3.828c-.09.542-.56 1.007-1.11 1.212l-2.27 1.135a1.875 1.875 0 0 1-1.989 0l-2.27-1.135a1.875 1.875 0 0 1-1.11-1.212l-.638-3.828c-.07-.42-.36-.784-.78-.96l-3.363-1.682a1.875 1.875 0 0 1 0-3.364l3.363-1.682c.42-.21.71-.54.78-.96l.638-3.828Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-1.212l2.27-1.135a1.875 1.875 0 0 1 1.989 0l2.27 1.135c.55.274 1.02.67 1.11 1.212l.638 3.828c.07.42.36.784.78.96l3.363 1.682a1.875 1.875 0 0 1 0 3.364l-3.363 1.682c-.42.21-.71.54-.78.96l-.638 3.828c-.09.542-.56 1.007-1.11 1.212l-2.27 1.135a1.875 1.875 0 0 1-1.989 0l-2.27-1.135a1.875 1.875 0 0 1-1.11-1.212l-.638-3.828c-.07-.42-.36-.784-.78-.96l-3.363-1.682a1.875 1.875 0 0 1 0-3.364l3.363-1.682c.42-.21.71.54.78-.96l.638-3.828Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
     </svg>
 );
@@ -134,5 +146,13 @@ export const ShieldExclamationIcon: React.FC<IconProps> = (props) => (
 export const KeyIcon: React.FC<IconProps> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+    </svg>
+);
+
+export const CrosshairIcon: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12H3m18 0h-6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9V3m0 18v-6" />
     </svg>
 );

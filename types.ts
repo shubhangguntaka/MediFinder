@@ -1,4 +1,5 @@
 
+
 export interface Medicine {
   name: string; // Generic name, e.g., Paracetamol
   brands: string[]; // Specific brand names, e.g., ["Calpol", "Dolo 650"]
@@ -33,6 +34,10 @@ export type User = CustomerUser | AuthorUser;
 export type StoredUser = (CustomerUser | AuthorUser) & { 
   password_plaintext: string;
   deletionScheduledOn?: number; // Timestamp for when deletion is scheduled
+  resetOTP?: {
+    code: string;
+    expires: number; // Timestamp
+  };
 };
 
 export interface Pharmacy {

@@ -13,8 +13,16 @@ const geocodeSchema = {
     properties: {
         lat: { type: Type.NUMBER, description: 'The latitude of the address.' },
         lng: { type: Type.NUMBER, description: 'The longitude of the address.' },
+        error: { type: Type.STRING, description: 'An error message if the address cannot be geocoded.' },
     },
-    required: ["lat", "lng"],
+};
+
+const reverseGeocodeSchema = {
+    type: Type.OBJECT,
+    properties: {
+        address: { type: Type.STRING, description: 'The full street address for the given coordinates.' },
+    },
+    required: ["address"],
 };
 
 const medicineInfoSchema = {
@@ -59,9 +67,9 @@ export const getMedicineInfo = async (medicineName: string): Promise<MedicineInf
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number }> => {
     try {
         const prompt = `
-            You are a geocoding API. Your task is to convert the following address into geographical coordinates (latitude and longitude).
+            You are a highly accurate geocoding API. Your task is to convert the following address into precise geographical coordinates (latitude and longitude).
             Address: "${address}"
-            Return only the JSON object with lat and lng. If you cannot determine the coordinates, return a random location in a major city.
+            Return ONLY the JSON object with 'lat' and 'lng' keys. Be as precise as possible. If the address is ambiguous or cannot be geocoded, you MUST return a JSON object with an 'error' key, for example: {"error": "Address not found"}. Do not make up coordinates.
         `;
 
         const response = await ai.models.generateContent({
@@ -76,14 +84,39 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
         const jsonText = response.text.trim();
         const coordinates = JSON.parse(jsonText);
         
-        return coordinates as { lat: number; lng: number };
+        if (coordinates.error || !coordinates.lat || !coordinates.lng) {
+            throw new Error(coordinates.error || 'Invalid coordinates returned from API.');
+        }
+
+        return { lat: coordinates.lat, lng: coordinates.lng };
 
     } catch (error) {
         console.error("Error geocoding address with Gemini API:", error);
-        // Fallback to a random location on error
-        return {
-            lat: 37.7749 + (Math.random() - 0.5) * 0.1, // SF fallback
-            lng: -122.4194 + (Math.random() - 0.5) * 0.1,
-        };
+        // Throw the error so the calling function can handle it.
+        throw new Error(`Could not find coordinates for "${address}".`);
+    }
+};
+
+export const reverseGeocodeCoordinates = async (coords: { lat: number; lng: number }): Promise<string> => {
+    try {
+        const prompt = `
+            You are a highly accurate reverse geocoding API. Convert the following geographical coordinates into a precise, complete, human-readable street address.
+            Coordinates: latitude: ${coords.lat}, longitude: ${coords.lng}
+            The address should be formatted correctly for the location's region. Return only the JSON object with the key "address". If you cannot determine a street address, provide the most specific location description possible (e.g., a park name, landmark, or city).
+        `;
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+              responseMimeType: "application/json",
+              responseSchema: reverseGeocodeSchema,
+            },
+        });
+        const jsonText = response.text.trim();
+        const { address } = JSON.parse(jsonText);
+        return address || 'Unknown location';
+    } catch (error) {
+        console.error("Error reverse geocoding coordinates with Gemini API:", error);
+        return 'Could not determine address';
     }
 };

@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
@@ -8,6 +7,7 @@ import AuthorDashboard from './components/AuthorDashboard';
 import Header from './components/Header';
 import WelcomePage from './components/WelcomePage';
 import ProfilePage from './components/ProfilePage';
+import Toast from './components/Toast';
 
 const App: React.FC = () => {
   const { user } = useAuth();
@@ -24,46 +24,48 @@ const App: React.FC = () => {
     setHasStarted(true);
   };
   
-  const handleLoginSuccess = () => {
-    setIsLoginVisible(false);
-    setView('main'); // Reset to main view on login
-  };
-  
   const handleLogout = () => {
     setView('main'); // Reset to main view on logout
   };
 
-  if (!hasStarted) {
-    return <WelcomePage onGetStarted={handleGetStarted} />;
-  }
-
-  // When a login is successful, the `user` object will be populated,
-  // and this component will re-render, effectively closing the login view.
-  if (isLoginVisible && !user) {
-    return <LoginPage onClose={() => setIsLoginVisible(false)} />;
-  }
-
-  const renderMainView = () => {
-    if (view === 'profile' && user) {
-        return <ProfilePage onBack={() => setView('main')} />;
+  const renderContent = () => {
+    if (!hasStarted) {
+        return <WelcomePage onGetStarted={handleGetStarted} />;
     }
-    
-    if (user?.role === 'author') {
-        return <AuthorDashboard />;
+
+    if (isLoginVisible && !user) {
+        return <LoginPage onClose={() => setIsLoginVisible(false)} />;
     }
-    
-    return <UserView onLoginClick={() => setIsLoginVisible(true)} />;
-  };
+
+    const renderMainView = () => {
+        if (view === 'profile' && user) {
+            return <ProfilePage onBack={() => setView('main')} />;
+        }
+        
+        if (user?.role === 'author') {
+            return <AuthorDashboard />;
+        }
+        
+        return <UserView onLoginClick={() => setIsLoginVisible(true)} />;
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-200">
+          <Header 
+            onLoginClick={() => setIsLoginVisible(true)} 
+            onProfileClick={() => setView('profile')}
+            onLogout={handleLogout}
+          />
+          {renderMainView()}
+        </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-200">
-      <Header 
-        onLoginClick={() => setIsLoginVisible(true)} 
-        onProfileClick={() => setView('profile')}
-        onLogout={handleLogout}
-      />
-      {renderMainView()}
-    </div>
+    <>
+      <Toast />
+      {renderContent()}
+    </>
   );
 };
 
