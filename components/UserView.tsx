@@ -3,9 +3,10 @@ import React, { useState, useCallback, useEffect } from 'react';
 import SearchBar from './SearchBar';
 import ResultsList from './ResultsList';
 import LocationSelector from './LocationSelector';
+import SmartScanModal from './SmartScanModal';
 import { searchPharmacies, getAllPharmacies } from '../services/pharmacyService';
 import type { SearchResult, CustomerUser, BasicStoreInfo } from '../types';
-import { HistoryIcon, LocationIcon, GlobeIcon, StoreIcon, ArrowLeftIcon } from './icons';
+import { HistoryIcon, LocationIcon, GlobeIcon, StoreIcon, ArrowLeftIcon, PillIcon } from './icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 
@@ -117,6 +118,9 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
   });
 
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [scannedMedicines, setScannedMedicines] = useState<string[]>([]);
+
   const [results, setResults] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,7 +156,6 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
     setManualLocation(location);
     localStorage.setItem('medifind_manual_location', JSON.stringify(location));
     setIsLocationSelectorOpen(false);
-    // When manual location is set, also reset search state to show new default list
     setHasSearched(false);
     setResults(null);
   };
@@ -161,7 +164,6 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
     setManualLocation(null);
     localStorage.removeItem('medifind_manual_location');
     setIsLocationSelectorOpen(false);
-    // Reset search state to show list based on auto-detected location
     setHasSearched(false);
     setResults(null);
   };
@@ -180,7 +182,7 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
     try {
       const data = await searchPharmacies(query, currentLocation);
       setResults(data);
-      if (user?.role === 'user' && query.length > 2) { // don't save single-letter searches etc.
+      if (user?.role === 'user' && query.length > 2) {
         addSearchTerm(query);
       }
     } catch (err: unknown) {
@@ -191,6 +193,13 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
       setIsLoading(false);
     }
   }, [currentLocation, user, addSearchTerm]);
+
+  const handleMedicinesFound = (medicines: string[]) => {
+    setScannedMedicines(medicines);
+    if (medicines.length === 1) {
+      handleSearch(medicines[0]);
+    }
+  };
 
   const handleGoBack = () => {
     setHasSearched(false);
@@ -204,7 +213,7 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
     <>
     <main className="container mx-auto px-4 pb-16 max-w-5xl">
         <div className="sticky top-0 sm:top-4 z-10 bg-gray-50/90 dark:bg-slate-900/90 backdrop-blur-sm p-4 -mx-4 sm:mx-0 sm:rounded-xl sm:shadow-lg sm:border border-gray-200/80 dark:border-slate-700/80 mb-6">
-            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+            <SearchBar onSearch={handleSearch} onOpenScan={() => setIsScanModalOpen(true)} isLoading={isLoading} />
             <LocationStatus 
                 currentLocationName={manualLocation?.name}
                 isAutoDetecting={isAutoLocationLoading}
@@ -214,7 +223,29 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
             />
         </div>
 
-        {user && searchHistory && searchHistory.length > 0 && !hasSearched && (
+        {scannedMedicines.length > 0 && (
+          <div className="mb-8 px-2 animate-fade-in-down">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-primary-700 dark:text-primary-400 flex items-center gap-2">
+                <PillIcon className="w-5 h-5"/> Found in your Scan
+              </h3>
+              <button onClick={() => setScannedMedicines([])} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {scannedMedicines.map(med => (
+                <button 
+                  key={med} 
+                  onClick={() => handleSearch(med)}
+                  className="px-4 py-2 bg-primary-100 text-primary-800 text-sm font-bold rounded-full hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-300 transition-all border border-primary-200 dark:border-primary-800"
+                >
+                  {med}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {user && searchHistory && searchHistory.length > 0 && !hasSearched && scannedMedicines.length === 0 && (
             <div className="mb-8 px-2">
                 <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-3"><HistoryIcon className="w-5 h-5"/> Recent Searches</h3>
                 <div className="flex flex-wrap gap-2">
@@ -281,6 +312,13 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
             onLocationSet={handleSetManualLocation}
             onUseCurrentLocation={handleUseCurrentLocation}
         />
+    )}
+
+    {isScanModalOpen && (
+      <SmartScanModal 
+        onClose={() => setIsScanModalOpen(false)} 
+        onMedicinesFound={handleMedicinesFound}
+      />
     )}
     </>
   );

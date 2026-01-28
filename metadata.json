@@ -2,7 +2,8 @@
   "name": "MediFind - Medicine Locator",
   "description": "A modern web application to help users find nearby pharmacies that have specific medicines in stock. Search for a medicine and get a list of stores, their stock status, and directions.",
   "requestFramePermissions": [
-    "geolocation"
+    "geolocation",
+    "camera"
   ],
   "prompt": ""
 }

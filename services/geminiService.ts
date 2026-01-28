@@ -35,12 +35,26 @@ const medicineInfoSchema = {
     required: ["description", "primaryUse", "commonForms"],
 };
 
+const imageAnalysisSchema = {
+    type: Type.OBJECT,
+    properties: {
+        medicines: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'A list of medicine names (generic or brand) identified in the image.'
+        },
+        confidence: { type: Type.NUMBER, description: 'Confidence score from 0 to 1.' },
+        note: { type: Type.STRING, description: 'A short helpful note about what was found.' }
+    },
+    required: ["medicines"]
+};
+
 export const getMedicineInfo = async (medicineName: string): Promise<MedicineInfo | null> => {
     try {
         const prompt = `Provide details for the medicine "${medicineName}". Focus on its primary use, what it treats, and common forms. Keep the description simple and easy for a layperson to understand. If you cannot find information, state that clearly in the description and use "N/A" for other fields.`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: prompt,
             config: {
                 temperature: 0.2,
@@ -52,7 +66,6 @@ export const getMedicineInfo = async (medicineName: string): Promise<MedicineInf
         const jsonText = response.text.trim();
         const info = JSON.parse(jsonText);
         
-        // Avoid returning generic failure messages from the model as valid info
         if (info.description.toLowerCase().includes("cannot find information") || info.description.toLowerCase().includes("i do not have information")) {
             return null;
         }
@@ -60,9 +73,42 @@ export const getMedicineInfo = async (medicineName: string): Promise<MedicineInf
         return info as MedicineInfo;
     } catch (error) {
         console.error(`Error fetching info for ${medicineName}:`, error);
-        return null; // Return null on error so the app doesn't break
+        return null;
     }
 };
+
+export const analyzeMedicineImage = async (base64Image: string, mimeType: string, mode: 'prescription' | 'identification'): Promise<{ medicines: string[], note?: string } | null> => {
+    try {
+        const systemInstruction = mode === 'prescription' 
+            ? "You are a medical OCR specialist. Extract all pharmaceutical drug names (generic or brand) from this prescription. Ignore dosages and patient names. Return a clean list of medicines."
+            : "You are a pharmaceutical identification expert. Identify the medicine shown in this image (pill, strip, or box). Focus on the main medicine name. If it is a pill, try to identify it by markings or color/shape.";
+
+        const prompt = mode === 'prescription'
+            ? "List all medicines found in this prescription image."
+            : "Identify the medicine in this image.";
+
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: {
+                parts: [
+                    { inlineData: { data: base64Image, mimeType } },
+                    { text: prompt }
+                ]
+            },
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                responseSchema: imageAnalysisSchema,
+            }
+        });
+
+        const result = JSON.parse(response.text);
+        return result;
+    } catch (error) {
+        console.error("Error analyzing image:", error);
+        return null;
+    }
+}
 
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number }> => {
     try {
@@ -73,7 +119,7 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
         `;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: prompt,
             config: {
               responseMimeType: "application/json",
@@ -92,7 +138,6 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
 
     } catch (error) {
         console.error("Error geocoding address with Gemini API:", error);
-        // Throw the error so the calling function can handle it.
         throw new Error(`Could not find coordinates for "${address}".`);
     }
 };
@@ -105,7 +150,7 @@ export const reverseGeocodeCoordinates = async (coords: { lat: number; lng: numb
             The address should be formatted correctly for the location's region. Return only the JSON object with the key "address". If you cannot determine a street address, provide the most specific location description possible (e.g., a park name, landmark, or city).
         `;
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: prompt,
             config: {
               responseMimeType: "application/json",
