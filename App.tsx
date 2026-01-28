@@ -50,7 +50,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-200">
+        <div className="min-h-screen bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-200 overflow-x-hidden">
           <Header 
             onLoginClick={() => setIsLoginVisible(true)} 
             onProfileClick={() => setView('profile')}

@@ -6,13 +6,17 @@ import LocationSelector from './LocationSelector';
 import SmartScanModal from './SmartScanModal';
 import { searchPharmacies, getAllPharmacies } from '../services/pharmacyService';
 import type { SearchResult, CustomerUser, BasicStoreInfo } from '../types';
-import { HistoryIcon, LocationIcon, GlobeIcon, StoreIcon, ArrowLeftIcon, PillIcon } from './icons';
+import { HistoryIcon, LocationIcon, GlobeIcon, StoreIcon, ArrowLeftIcon, PillIcon, SearchIcon, PencilIcon, DocumentScannerIcon } from './icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 
 interface UserViewProps {
   onLoginClick: () => void;
 }
+
+const SUGGESTED_MEDICINES = [
+  "Paracetamol", "Azithromycin", "Dolo 650", "Shelcal 500", "Lantus", "Aspirin"
+];
 
 interface LocationStatusProps {
     currentLocationName: string | undefined;
@@ -41,12 +45,12 @@ const LocationStatus: React.FC<LocationStatusProps> = ({ currentLocationName, is
     }
 
     return (
-        <div className="mt-4 flex items-center justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-                {icon}
-                <span className="truncate max-w-[250px]">{statusText}</span>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-gray-600 dark:text-gray-400 px-2">
+            <div className="flex items-center gap-2 min-w-0">
+                <span className="shrink-0">{icon}</span>
+                <span className="truncate">{statusText}</span>
             </div>
-            <button onClick={onOpenSelector} className="font-semibold text-primary-600 hover:underline">
+            <button onClick={onOpenSelector} className="shrink-0 font-bold text-primary-600 hover:text-primary-700 hover:underline transition-colors">
                 {currentLocationName || hasAutoLocation ? 'Change' : 'Set Location'}
             </button>
         </div>
@@ -54,28 +58,28 @@ const LocationStatus: React.FC<LocationStatusProps> = ({ currentLocationName, is
 };
 
 const StoreListCard: React.FC<{ store: BasicStoreInfo; onViewInventory: (name: string) => void }> = ({ store, onViewInventory }) => (
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200/80 flex flex-col justify-between group hover:shadow-lg hover:-translate-y-1 dark:bg-slate-800 dark:border-slate-700">
-        <div>
-            <div className="flex items-start gap-3 mb-2">
-                <div className="flex-shrink-0 pt-1">
-                    <StoreIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between group hover:shadow-xl hover:border-primary-100 transition-all duration-300 dark:bg-slate-800 dark:border-slate-700 h-full">
+        <div className="min-w-0">
+            <div className="flex items-start gap-4 mb-3">
+                <div className="flex-shrink-0 p-3 bg-slate-50 dark:bg-slate-700 rounded-xl group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 transition-colors">
+                    <StoreIcon className="w-6 h-6 text-gray-400 group-hover:text-primary-600 transition-colors" />
                 </div>
-                <div>
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{store.name}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{store.address}</p>
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 leading-tight break-words">{store.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-3 break-words">{store.address}</p>
                 </div>
             </div>
             {store.distance !== -1 && (
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-3 ml-9">
-                    <LocationIcon className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-4 ml-1">
+                    <LocationIcon className="w-4 h-4 text-primary-500" />
                     <span>{store.distance.toFixed(1)} km away</span>
                 </div>
             )}
         </div>
-        <div className="flex justify-end items-center mt-4">
+        <div className="flex justify-end items-center mt-6">
             <button
                 onClick={() => onViewInventory(store.name)}
-                className="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+                className="w-full px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition-all shadow-md shadow-slate-900/10"
             >
                 View Inventory
             </button>
@@ -84,22 +88,16 @@ const StoreListCard: React.FC<{ store: BasicStoreInfo; onViewInventory: (name: s
 );
 
 const StoreListSkeleton: React.FC = () => (
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200/80 animate-pulse dark:bg-slate-800 dark:border-slate-700">
-      <div className="flex items-start gap-3 mb-2">
-        <div className="flex-shrink-0 pt-1">
-          <div className="w-6 h-6 bg-slate-200 rounded dark:bg-slate-700"></div>
-        </div>
-        <div>
-          <div className="h-6 bg-slate-200 rounded w-48 mb-2 dark:bg-slate-700"></div>
-          <div className="h-4 bg-slate-200 rounded w-64 dark:bg-slate-700"></div>
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-pulse dark:bg-slate-800 dark:border-slate-700 h-full">
+      <div className="flex items-start gap-4 mb-4">
+        <div className="w-12 h-12 bg-slate-100 rounded-xl dark:bg-slate-700"></div>
+        <div className="flex-1">
+          <div className="h-6 bg-slate-100 rounded-md w-3/4 mb-2 dark:bg-slate-700"></div>
+          <div className="h-4 bg-slate-100 rounded-md w-1/2 dark:bg-slate-700"></div>
         </div>
       </div>
-      <div className="h-5 mt-3 ml-9">
-          <div className="h-4 bg-slate-200 rounded w-24 dark:bg-slate-700"></div>
-      </div>
-      <div className="flex justify-end items-center mt-4">
-        <div className="h-10 w-36 bg-slate-200 rounded-lg dark:bg-slate-700"></div>
-      </div>
+      <div className="h-4 bg-slate-50 rounded-md w-1/4 mb-6 dark:bg-slate-700/50"></div>
+      <div className="h-10 bg-slate-100 rounded-xl w-full sm:w-32 ml-auto dark:bg-slate-700"></div>
     </div>
 );
 
@@ -120,6 +118,7 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [scannedMedicines, setScannedMedicines] = useState<string[]>([]);
+  const [manualEntry, setManualEntry] = useState('');
 
   const [results, setResults] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -205,14 +204,15 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
     setHasSearched(false);
     setResults(null);
     setError(null);
+    setManualEntry('');
   };
   
   const searchHistory = (user as CustomerUser)?.searchHistory;
 
   return (
     <>
-    <main className="container mx-auto px-4 pb-16 max-w-5xl">
-        <div className="sticky top-0 sm:top-4 z-10 bg-gray-50/90 dark:bg-slate-900/90 backdrop-blur-sm p-4 -mx-4 sm:mx-0 sm:rounded-xl sm:shadow-lg sm:border border-gray-200/80 dark:border-slate-700/80 mb-6">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-12 max-w-7xl">
+        <div className="sticky top-0 sm:top-4 z-30 bg-gray-50/95 dark:bg-slate-900/95 backdrop-blur-xl p-5 sm:rounded-3xl sm:shadow-2xl sm:shadow-primary-500/5 sm:border border-gray-200/50 dark:border-slate-800/80 mb-8 w-full">
             <SearchBar onSearch={handleSearch} onOpenScan={() => setIsScanModalOpen(true)} isLoading={isLoading} />
             <LocationStatus 
                 currentLocationName={manualLocation?.name}
@@ -223,34 +223,90 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
             />
         </div>
 
-        {scannedMedicines.length > 0 && (
-          <div className="mb-8 px-2 animate-fade-in-down">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-primary-700 dark:text-primary-400 flex items-center gap-2">
-                <PillIcon className="w-5 h-5"/> Found in your Scan
-              </h3>
-              <button onClick={() => setScannedMedicines([])} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+        {!hasSearched && (
+          <div className="mb-10 animate-fade-in-down">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-800/50">
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold dark:text-white flex items-center gap-2 mb-2">
+                    <PencilIcon className="w-6 h-6 text-primary-600" />
+                    Quick Medicine Entry
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Prefer typing? Enter the exact medicine name below to find it instantly in nearby stores.</p>
+                </div>
+                <div className="flex-1 flex gap-2">
+                  <input 
+                    type="text" 
+                    value={manualEntry}
+                    onChange={(e) => setManualEntry(e.target.value)}
+                    placeholder="e.g. Insulin, Cetrizine..."
+                    className="flex-grow min-w-0 px-5 py-3.5 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none dark:text-white"
+                  />
+                  <button 
+                    onClick={() => manualEntry.trim() && handleSearch(manualEntry)}
+                    className="px-6 bg-primary-600 text-white font-bold rounded-2xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20"
+                  >
+                    Find
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2 mr-2">
+                  <SearchIcon className="w-4 h-4" /> Recommended:
+                </span>
+                {SUGGESTED_MEDICINES.map(med => (
+                  <button 
+                    key={med}
+                    onClick={() => handleSearch(med)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-700 transition-all border border-transparent hover:border-primary-200 dark:hover:border-primary-800"
+                  >
+                    {med}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {scannedMedicines.map(med => (
+          </div>
+        )}
+
+        {scannedMedicines.length > 0 && (
+          <div className="mb-10 animate-fade-in-down">
+            <div className="bg-primary-50 dark:bg-primary-900/10 p-6 rounded-[2rem] border border-primary-100 dark:border-primary-900/30">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-primary-700 dark:text-primary-400 flex items-center gap-2">
+                  <DocumentScannerIcon className="w-6 h-6"/> AI Scanned Results
+                </h3>
                 <button 
-                  key={med} 
-                  onClick={() => handleSearch(med)}
-                  className="px-4 py-2 bg-primary-100 text-primary-800 text-sm font-bold rounded-full hover:bg-primary-200 dark:bg-primary-900/40 dark:text-primary-300 transition-all border border-primary-200 dark:border-primary-800"
+                  onClick={() => setScannedMedicines([])} 
+                  className="px-4 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-gray-500 rounded-full shadow-sm hover:text-red-500 transition-all"
                 >
-                  {med}
+                  Dismiss Scan
                 </button>
-              ))}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {scannedMedicines.map(med => (
+                  <button 
+                    key={med} 
+                    onClick={() => handleSearch(med)}
+                    className="group px-5 py-3 bg-white dark:bg-slate-800 text-primary-800 text-sm font-bold rounded-2xl hover:bg-primary-600 hover:text-white transition-all shadow-sm border border-primary-200 dark:border-primary-800 flex items-center gap-2"
+                  >
+                    <SearchIcon className="w-4 h-4 opacity-40 group-hover:opacity-100" />
+                    {med}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {user && searchHistory && searchHistory.length > 0 && !hasSearched && scannedMedicines.length === 0 && (
-            <div className="mb-8 px-2">
-                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-2 mb-3"><HistoryIcon className="w-5 h-5"/> Recent Searches</h3>
-                <div className="flex flex-wrap gap-2">
+            <div className="mb-10 px-4">
+                <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-4">
+                  <HistoryIcon className="w-5 h-5"/> Your Recent History
+                </h3>
+                <div className="flex flex-wrap gap-3">
                     {searchHistory.map(term => (
-                        <button key={term} onClick={() => handleSearch(term)} className="px-3 py-1 bg-slate-200 text-slate-700 text-sm rounded-full hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
+                        <button key={term} onClick={() => handleSearch(term)} className="px-5 py-2.5 bg-white dark:bg-slate-800 text-slate-700 text-sm font-semibold rounded-2xl border border-gray-100 dark:border-slate-700 hover:border-primary-400 transition-all shadow-sm">
                             {term}
                         </button>
                     ))}
@@ -259,15 +315,17 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
         )}
         
         {hasSearched ? (
-            <div>
-              <div className="mb-4 px-2">
+            <div className="animate-fade-in-down">
+              <div className="mb-6 flex items-center justify-between">
                 <button
                   onClick={handleGoBack}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:text-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-slate-700 bg-white shadow-sm border border-gray-200 rounded-2xl hover:bg-slate-50 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700 transition-all"
                 >
                   <ArrowLeftIcon className="w-5 h-5" />
-                  Back to All Pharmacies
+                  Return to Overview
                 </button>
+                <div className="hidden sm:block h-px flex-grow bg-gray-200 dark:bg-slate-800 mx-6"></div>
+                <div className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Searching...</div>
               </div>
               <ResultsList 
                   results={results} 
@@ -283,28 +341,44 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
               />
             </div>
         ) : (
-            <div className="mt-6">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 px-2">All Pharmacies</h2>
+            <div className="mt-8 animate-fade-in-down">
+                <div className="flex items-center justify-between mb-6 px-2">
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-3">
+                    <StoreIcon className="w-8 h-8 text-primary-600" />
+                    Nearby Pharmacies
+                  </h2>
+                  <div className="text-xs font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-3 py-1.5 rounded-full uppercase">
+                    {initialStores.length} Stores Found
+                  </div>
+                </div>
                 {isInitialLoading ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                         {Array.from({ length: 6 }).map((_, index) => <StoreListSkeleton key={index} />)}
                     </div>
                 ) : initialStores.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                         {initialStores.map(store => (
                             <StoreListCard key={store.name} store={store} onViewInventory={handleSearch} />
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-10 px-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border dark:border-slate-700">
-                        <StoreIcon className="w-16 h-16 mx-auto text-gray-400 dark:text-slate-500" />
-                        <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">No Pharmacies Found</h3>
-                        <p className="mt-1 text-gray-500 dark:text-gray-400">There are no registered pharmacies yet. Check back later!</p>
+                    <div className="text-center py-20 px-8 bg-white dark:bg-slate-800 rounded-[3rem] shadow-sm border dark:border-slate-800/50 mx-2">
+                        <div className="w-24 h-24 bg-gray-50 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                          <StoreIcon className="w-12 h-12 text-gray-300 dark:text-slate-500" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">No Stores in this Area</h3>
+                        <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-sm mx-auto">Try changing your search radius or location to discover pharmacies with live inventory.</p>
+                        <button 
+                          onClick={() => setIsLocationSelectorOpen(true)}
+                          className="mt-8 px-8 py-3 bg-primary-600 text-white font-bold rounded-2xl hover:bg-primary-700 transition-all shadow-xl shadow-primary-500/20"
+                        >
+                          Change Location
+                        </button>
                     </div>
                 )}
             </div>
         )}
-    </main>
+    </div>
 
     {isLocationSelectorOpen && (
         <LocationSelector

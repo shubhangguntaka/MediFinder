@@ -28,7 +28,7 @@ const Toast: React.FC = () => {
 
   return (
     <div 
-        className="fixed top-5 left-1/2 z-[100] w-full max-w-sm sm:max-w-md animate-fade-in-down"
+        className="fixed top-5 left-1/2 z-[100] w-full max-w-sm sm:max-w-md animate-toast-in"
         role="alert"
     >
       <div className={`relative flex items-start gap-4 p-4 rounded-lg shadow-lg border ${bgColors[toast.type]}`}>

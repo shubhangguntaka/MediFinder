@@ -44,9 +44,19 @@ const imageAnalysisSchema = {
             description: 'A list of medicine names (generic or brand) identified in the image.'
         },
         confidence: { type: Type.NUMBER, description: 'Confidence score from 0 to 1.' },
-        note: { type: Type.STRING, description: 'A short helpful note about what was found.' }
+        note: { type: Type.STRING, description: 'A short helpful note about what was found.' },
+        error: { type: Type.STRING, description: 'Specific error message if identification failed (e.g., image too blurry, not a medicine).' }
     },
     required: ["medicines"]
+};
+
+// Helper to clean JSON string from Markdown code blocks
+const cleanJsonString = (text: string): string => {
+    let cleanText = text.trim();
+    if (cleanText.startsWith("```")) {
+        cleanText = cleanText.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+    }
+    return cleanText;
 };
 
 export const getMedicineInfo = async (medicineName: string): Promise<MedicineInfo | null> => {
@@ -63,7 +73,10 @@ export const getMedicineInfo = async (medicineName: string): Promise<MedicineInf
             },
         });
 
-        const jsonText = response.text.trim();
+        const rawText = response.text?.trim();
+        if (!rawText) return null;
+        
+        const jsonText = cleanJsonString(rawText);
         const info = JSON.parse(jsonText);
         
         if (info.description.toLowerCase().includes("cannot find information") || info.description.toLowerCase().includes("i do not have information")) {
@@ -77,15 +90,15 @@ export const getMedicineInfo = async (medicineName: string): Promise<MedicineInf
     }
 };
 
-export const analyzeMedicineImage = async (base64Image: string, mimeType: string, mode: 'prescription' | 'identification'): Promise<{ medicines: string[], note?: string } | null> => {
+export const analyzeMedicineImage = async (base64Image: string, mimeType: string, mode: 'prescription' | 'identification'): Promise<{ medicines: string[], note?: string, error?: string } | null> => {
     try {
         const systemInstruction = mode === 'prescription' 
-            ? "You are a medical OCR specialist. Extract all pharmaceutical drug names (generic or brand) from this prescription. Ignore dosages and patient names. Return a clean list of medicines."
-            : "You are a pharmaceutical identification expert. Identify the medicine shown in this image (pill, strip, or box). Focus on the main medicine name. If it is a pill, try to identify it by markings or color/shape.";
+            ? "You are a specialized medical OCR assistant. Your task is to accurately extract all pharmaceutical drug names (both generic and brand names) from medical prescriptions. You must ignore patient names, doctor names, hospital headers, and dosages (like 500mg, 1 tab daily). Only return the chemical or commercial names of the drugs. If the image is not a prescription or is illegible, use the error field to explain why."
+            : "You are a pharmaceutical identification expert. Your task is to identify the specific medicine shown in an image, which could be a loose pill, a medicine strip, or a medicine box/bottle. Identify by color, shape, markings (imprints), or printed text on the packaging. Prioritize identifying the main active generic ingredient or the commercial brand name. If you are unsure, provide the most likely candidate. If the image is not medicine-related or is too blurry, use the error field.";
 
         const prompt = mode === 'prescription'
-            ? "List all medicines found in this prescription image."
-            : "Identify the medicine in this image.";
+            ? "Analyze this prescription and extract all medicine names. If it's a doctor's note, look for the 'Rx' section."
+            : "Identify this medicine. Look for brand names on the packaging or imprints on the pill.";
 
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
@@ -102,11 +115,15 @@ export const analyzeMedicineImage = async (base64Image: string, mimeType: string
             }
         });
 
-        const result = JSON.parse(response.text);
+        const rawText = response.text?.trim();
+        if (!rawText) throw new Error("Received empty response from AI");
+
+        const jsonText = cleanJsonString(rawText);
+        const result = JSON.parse(jsonText);
         return result;
     } catch (error) {
         console.error("Error analyzing image:", error);
-        return null;
+        return { medicines: [], error: "The AI service encountered an error processing your image. Please try again with better lighting." };
     }
 }
 
@@ -127,7 +144,10 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
             },
         });
 
-        const jsonText = response.text.trim();
+        const rawText = response.text?.trim();
+        if (!rawText) throw new Error("Empty response");
+
+        const jsonText = cleanJsonString(rawText);
         const coordinates = JSON.parse(jsonText);
         
         if (coordinates.error || !coordinates.lat || !coordinates.lng) {
@@ -157,7 +177,11 @@ export const reverseGeocodeCoordinates = async (coords: { lat: number; lng: numb
               responseSchema: reverseGeocodeSchema,
             },
         });
-        const jsonText = response.text.trim();
+        
+        const rawText = response.text?.trim();
+        if (!rawText) return 'Unknown location';
+
+        const jsonText = cleanJsonString(rawText);
         const { address } = JSON.parse(jsonText);
         return address || 'Unknown location';
     } catch (error) {

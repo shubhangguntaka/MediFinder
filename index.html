@@ -29,6 +29,7 @@
         font-family: 'Inter', sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
       }
       * {
         transition: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;
@@ -55,6 +56,7 @@
       .theme-orange {
         --color-primary-50: 255 247 237; --color-primary-100: 255 237 213; --color-primary-200: 254 215 170; --color-primary-300: 253 186 116; --color-primary-400: 251 146 60; --color-primary-500: 249 115 22; --color-primary-600: 234 88 12; --color-primary-700: 194 65 12; --color-primary-800: 154 52 18; --color-primary-900: 124 45 18;
       }
+      
       /* Leaflet dark mode styles */
       .dark .leaflet-tile-pane {
         filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
@@ -70,8 +72,11 @@
         color: #e2e8f0 !important; /* slate-200 */
         border-color: #475569 !important; /* slate-600 */
       }
-      /* Toast Animation */
-      @keyframes fade-in-down {
+
+      /* Animations */
+      
+      /* Specific for Toast: Slides down and stays centered horizontally */
+      @keyframes toast-in {
         0% {
           opacity: 0;
           transform: translateY(-20px) translateX(-50%);
@@ -79,6 +84,21 @@
         100% {
           opacity: 1;
           transform: translateY(0) translateX(-50%);
+        }
+      }
+      .animate-toast-in {
+        animation: toast-in 0.5s ease-out forwards;
+      }
+
+      /* General Fade In Down for static elements (NO horizontal translation) */
+      @keyframes fade-in-down {
+        0% {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
       .animate-fade-in-down {

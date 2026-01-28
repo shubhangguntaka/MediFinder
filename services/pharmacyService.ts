@@ -1,3 +1,4 @@
+
 import Fuse from 'fuse.js';
 import type { Pharmacy, StoredUser, AuthorUser, SearchResult, BasicStoreInfo, MedicineInfo } from '../types';
 import { getMedicineInfo } from './geminiService';
@@ -16,9 +17,6 @@ const getUsersFromStorage = (): StoredUser[] => {
 const getValidAuthors = (): AuthorUser[] => {
     const allUsers = getUsersFromStorage();
     // Filter for authors and ensure they have a valid location property
-    // FIX: The type predicate `user is AuthorUser` was invalid because `AuthorUser` is not a subtype of `StoredUser`.
-    // The correct predicate narrows `StoredUser` to `AuthorUser & StoredUser`, which correctly resolves to an `AuthorUser` with storage properties.
-    // This makes the filtered array type-compatible with `AuthorUser[]`.
     return allUsers.filter(
         (user): user is AuthorUser & StoredUser =>
             user.role === 'author' &&
